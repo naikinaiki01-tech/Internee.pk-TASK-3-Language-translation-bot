@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinguaBot — Language Translation Chatbot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5EFE4;
+    --card:#FFFDF8;
+    --ink:#2B2A3D;
+    --ink-light:#66627A;
+    --line:#DCD3BE;
+    --stamp-red:#A63446;
+    --stamp-blue:#2B4C7E;
+    --gold:#B9902F;
+    --gold-bg:#F1E6C8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:#E9E2D3;
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:28px 16px;
+    min-height:100vh;
+  }
+  .app{
+    width:100%;
+    max-width:740px;
+    background:var(--card);
+    border-radius:4px;
+    display:flex;
+    flex-direction:column;
+    min-height:660px;
+    overflow:hidden;
+    box-shadow:0 1px 0 var(--line);
+  }
+  /* Airmail striped border, top only */
+  .airmail{
+    height:8px;
+    background:repeating-linear-gradient(
+      -45deg,
+      var(--stamp-red) 0 14px,
+      var(--card) 14px 20px,
+      var(--stamp-blue) 20px 34px,
+      var(--card) 34px 40px
+    );
+  }
+  .head{
+    padding:22px 28px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .head-title{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:30px;
+    margin:0;
+  }
+  .head-sub{
+    font-size:12.5px;
+    color:var(--ink-light);
+    margin-top:2px;
+  }
+  .stamp{
+    border:2px solid var(--gold);
+    color:var(--gold);
+    font-family:'Space Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.06em;
+    padding:6px 10px;
+    border-radius:2px;
+    transform:rotate(3deg);
+    text-align:center;
+    line-height:1.3;
+  }
+  .chat{
+    flex:1;
+    padding:22px 26px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .row{ display:flex; }
+  .row.bot{ justify-content:flex-start; }
+  .row.user{ justify-content:flex-end; }
+  .bubble{
+    max-width:82%;
+    padding:12px 15px;
+    line-height:1.55;
+    font-size:14.5px;
+  }
+  .bubble.bot{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:3px 12px 12px 12px;
+  }
+  .bubble.user{
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:12px 3px 12px 12px;
+  }
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:2px;
+  }
+  .chip{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    padding:7px 11px;
+    background:var(--gold-bg);
+    color:var(--gold);
+    border:1px solid var(--gold);
+    border-radius:3px;
+    cursor:pointer;
+    transition:background 0.15s, color 0.15s;
+  }
+  .chip:hover{ background:var(--gold); color:#fff; }
+  /* Postcard-style translation result */
+  .postcard{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:16px 18px;
+    max-width:100%;
+    position:relative;
+  }
+  .postcard::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0;
+    height:5px;
+    background:repeating-linear-gradient(
+      -45deg,
+      var(--stamp-red) 0 10px,
+      #fff 10px 14px,
+      var(--stamp-blue) 14px 24px,
+      #fff 24px 28px
+    );
+  }
+  .pc-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    color:var(--ink-light);
+    margin-top:8px;
+  }
+  .pc-lang{
+    color:var(--stamp-blue);
+    font-weight:700;
+  }
+  .pc-text{
+    font-family:'Cormorant Garamond', serif;
+    font-size:19px;
+    margin:8px 0 2px;
+    line-height:1.4;
+  }
+  .pc-detect-note{
+    font-size:11px;
+    color:var(--ink-light);
+    font-style:italic;
+    margin-top:8px;
+  }
+  .inputbar{
+    border-top:1px solid var(--line);
+    padding:14px 20px;
+    display:flex;
+    gap:10px;
+  }
+  .inputbar input{
+    flex:1;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 12px;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    background:#fff;
+  }
+  .inputbar input:focus{ outline:2px solid var(--ink); outline-offset:-1px; }
+  .inputbar button{
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:0 18px;
+    border-radius:3px;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .inputbar button:hover{ background:var(--stamp-red); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="airmail"></div>
+  <div class="head">
+    <div>
+      <p class="head-title">LinguaBot</p>
+      <p class="head-sub">translation desk · 23 languages supported</p>
+    </div>
+    <div class="stamp">AIR<br>MAIL</div>
+  </div>
+  <div class="chat" id="chat"></div>
+  <div class="inputbar">
+    <input id="textInput" type="text" placeholder="Type a message to translate…" autocomplete="off">
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   1. INTENT DESIGN
+   ------------------------------------------------------------
+   intent = { sourceLang: "auto"|langCode, targetLang: langCode, text: string }
+
+   Flow:
+     1. User picks a target language (or types one)
+     2. User sends the message to translate
+     3. detectLanguage(text) identifies the source language
+        (unless the user has pinned it manually)
+     4. translateText() is called with the resolved intent
+   ============================================================ */
+
+const LANGUAGES = [
+  { code:"en", name:"English" },
+  { code:"ur", name:"Urdu" },
+  { code:"ar", name:"Arabic" },
+  { code:"fa", name:"Persian" },
+  { code:"fr", name:"French" },
+  { code:"es", name:"Spanish" },
+  { code:"de", name:"German" },
+  { code:"it", name:"Italian" },
+  { code:"pt", name:"Portuguese" },
+  { code:"nl", name:"Dutch" },
+  { code:"ru", name:"Russian" },
+  { code:"tr", name:"Turkish" },
+  { code:"hi", name:"Hindi" },
+  { code:"bn", name:"Bengali" },
+  { code:"zh", name:"Chinese (Simplified)" },
+  { code:"ja", name:"Japanese" },
+  { code:"ko", name:"Korean" },
+  { code:"th", name:"Thai" },
+  { code:"vi", name:"Vietnamese" },
+  { code:"id", name:"Indonesian" },
+  { code:"sw", name:"Swahili" },
+  { code:"el", name:"Greek" },
+  { code:"he", name:"Hebrew" },
+  { code:"pl", name:"Polish" }
+]; // 24 languages
+
+function langName(code){ return (LANGUAGES.find(l=>l.code===code)||{}).name || code; }
+
+/* ============================================================
+   2. LANGUAGE DETECTION (feature: "Language detection and response")
+   ------------------------------------------------------------
+   Demo-grade heuristic: Unicode script ranges catch non-Latin
+   languages reliably; Latin-script languages are disambiguated
+   with a short stop-word list. Production would replace this
+   whole function with one call to Cloud Translation's
+   `detectLanguage` endpoint (see API block below), which is
+   trained for this and doesn't need hand-written rules.
+   ============================================================ */
+
+const SCRIPT_TESTS = [
+  { code:"ar", re:/[\u0600-\u06FF]/, extra:/[پچژگ]/, extraCode:"fa" }, // Arabic script; Persian if it has extra letters
+  { code:"ur", re:/[\u0600-\u06FF]/, extra:/[ٹڈڑںے]/, extraCode:"ur" },
+  { code:"he", re:/[\u0590-\u05FF]/ },
+  { code:"hi", re:/[\u0900-\u097F]/ },
+  { code:"bn", re:/[\u0980-\u09FF]/ },
+  { code:"ru", re:/[\u0400-\u04FF]/ },
+  { code:"el", re:/[\u0370-\u03FF]/ },
+  { code:"zh", re:/[\u4E00-\u9FFF]/ },
+  { code:"ja", re:/[\u3040-\u30FF]/ },
+  { code:"ko", re:/[\uAC00-\uD7AF]/ },
+  { code:"th", re:/[\u0E00-\u0E7F]/ },
+  { code:"vi", re:/[\u1EA0-\u1EF9\u1EC0-\u1EF9]/ }
+];
+
+const LATIN_STOPWORDS = {
+  en:["the","and","is","you","are","this"],
+  fr:["le","la","et","est","vous","bonjour"],
+  es:["el","la","y","es","usted","hola"],
+  de:["der","die","und","ist","sie","hallo"],
+  it:["il","la","e","è","ciao","grazie"],
+  pt:["o","a","e","é","você","obrigado"],
+  nl:["de","het","en","is","hallo","dank"],
+  tr:["ve","bir","bu","merhaba","teşekkür"],
+  id:["dan","yang","di","selamat","terima"],
+  sw:["na","ya","kwa","habari","asante"],
+  pl:["i","w","na","dzień","dziękuję"]
+};
+
+function detectLanguage(text){
+  const t = text.trim();
+  for(const test of SCRIPT_TESTS){
+    if(test.re.test(t)){
+      if(test.extra && test.extra.test(t)) return test.extraCode;
+      if(test.code === "ur" || test.code === "fa") continue; // handled via 'ar' base test below
+      return test.code;
+    }
+  }
+  if(/[\u0600-\u06FF]/.test(t)){
+    if(/[ٹڈڑںے]/.test(t)) return "ur";
+    if(/[پچژگ]/.test(t)) return "fa";
+    return "ar";
+  }
+  const lower = t.toLowerCase();
+  let best = { code:"en", hits:0 };
+  for(const [code, words] of Object.entries(LATIN_STOPWORDS)){
+    const hits = words.filter(w => lower.includes(w)).length;
+    if(hits > best.hits) best = { code, hits };
+  }
+  return best.code;
+
+  /* ---- REAL GOOGLE CLOUD TRANSLATION API (swap-in) ----
+  const res = await fetch(`https://translation.googleapis.com/language/translate/v2/detect?key=${API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ q: text })
+  });
+  const data = await res.json();
+  return data.data.detections[0][0].language;
+  */
+}
+
+/* ============================================================
+   3. API INTEGRATION LAYER (feature: dynamic translation)
+   ------------------------------------------------------------
+   translateText() stands in for the Google Cloud Translation
+   API. It returns the same shape a real call would, so swapping
+   the mock for the live endpoint is a drop-in change.
+   ============================================================ */
+
+// Small phrase bank so the demo can show real, meaningful output
+// for common greetings across all 24 languages without a live key.
+const PHRASE_BANK = {
+  hello: { en:"Hello", ur:"ہیلو", ar:"مرحبا", fa:"سلام", fr:"Bonjour", es:"Hola", de:"Hallo", it:"Ciao", pt:"Olá", nl:"Hallo", ru:"Привет", tr:"Merhaba", hi:"नमस्ते", bn:"হ্যালো", zh:"你好", ja:"こんにちは", ko:"안녕하세요", th:"สวัสดี", vi:"Xin chào", id:"Halo", sw:"Habari", el:"Γειά σου", he:"שלום", pl:"Cześć" },
+  "thank you": { en:"Thank you", ur:"شکریہ", ar:"شكرا", fa:"متشکرم", fr:"Merci", es:"Gracias", de:"Danke", it:"Grazie", pt:"Obrigado", nl:"Dank je", ru:"Спасибо", tr:"Teşekkürler", hi:"धन्यवाद", bn:"ধন্যবাদ", zh:"谢谢", ja:"ありがとう", ko:"감사합니다", th:"ขอบคุณ", vi:"Cảm ơn", id:"Terima kasih", sw:"Asante", el:"Ευχαριστώ", he:"תודה", pl:"Dziękuję" },
+  "good morning": { en:"Good morning", ur:"صبح بخیر", ar:"صباح الخير", fa:"صبح بخیر", fr:"Bonjour", es:"Buenos días", de:"Guten Morgen", it:"Buongiorno", pt:"Bom dia", nl:"Goedemorgen", ru:"Доброе утро", tr:"Günaydın", hi:"सुप्रभात", bn:"সুপ্রভাত", zh:"早上好", ja:"おはよう", ko:"좋은 아침", th:"อรุณสวัสดิ์", vi:"Chào buổi sáng", id:"Selamat pagi", sw:"Habari za asubuhi", el:"Καλημέρα", he:"בוקר טוב", pl:"Dzień dobry" },
+  "how are you": { en:"How are you?", ur:"آپ کیسے ہیں؟", ar:"كيف حالك؟", fa:"حالت چطوره؟", fr:"Comment ça va?", es:"¿Cómo estás?", de:"Wie geht's?", it:"Come stai?", pt:"Como você está?", nl:"Hoe gaat het?", ru:"Как дела?", tr:"Nasılsın?", hi:"आप कैसे हैं?", bn:"তুমি কেমন আছো?", zh:"你好吗？", ja:"お元気ですか？", ko:"어떻게 지내세요?", th:"เป็นอย่างไรบ้าง?", vi:"Bạn khỏe không?", id:"Apa kabar?", sw:"Habari yako?", el:"Πώς είσαι;", he:"מה שלומך?", pl:"Jak się masz?" },
+  goodbye: { en:"Goodbye", ur:"خدا حافظ", ar:"مع السلامة", fa:"خداحافظ", fr:"Au revoir", es:"Adiós", de:"Auf Wiedersehen", it:"Arrivederci", pt:"Adeus", nl:"Tot ziens", ru:"До свидания", tr:"Hoşça kal", hi:"अलविदा", bn:"বিদায়", zh:"再见", ja:"さようなら", ko:"안녕히 가세요", th:"ลาก่อน", vi:"Tạm biệt", id:"Selamat tinggal", sw:"Kwaheri", el:"Αντίο", he:"להתראות", pl:"Do widzenia" }
+};
+
+async function translateText({ text, sourceLang, targetLang }) {
+  // ---- MOCK behaviour ----
+  await new Promise(r => setTimeout(r, 350));
+  const lower = text.trim().toLowerCase().replace(/[!.?]/g,'');
+  for(const [phrase, map] of Object.entries(PHRASE_BANK)){
+    if(lower === phrase || lower.includes(phrase)){
+      return { translatedText: map[targetLang] || `[${langName(targetLang)} translation of "${text}"]`, matched:true };
+    }
+  }
+  return { translatedText: `[${langName(targetLang)} translation would appear here — connect a live API key to translate arbitrary text]`, matched:false };
+
+  /* ---- REAL GOOGLE CLOUD TRANSLATION API (swap-in) ----
+  const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      q: text,
+      source: sourceLang === "auto" ? undefined : sourceLang,
+      target: targetLang,
+      format: "text"
+    })
+  });
+  const data = await res.json();
+  return { translatedText: data.data.translations[0].translatedText, matched:true };
+  */
+}
+
+/* ============================================================
+   4. CHAT UI HELPERS
+   ============================================================ */
+
+const chatEl = document.getElementById('chat');
+const textInput = document.getElementById('textInput');
+const sendBtn = document.getElementById('sendBtn');
+
+function addBotBubble(html){
+  const row = document.createElement('div');
+  row.className = 'row bot';
+  row.innerHTML = `<div class="bubble bot">${html}</div>`;
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+function addUserBubble(text){
+  const row = document.createElement('div');
+  row.className = 'row user';
+  row.innerHTML = `<div class="bubble user"></div>`;
+  row.querySelector('.bubble').textContent = text;
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+function addChips(options, onPick){
+  const row = document.createElement('div');
+  row.className = 'row bot';
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble bot';
+  const chips = document.createElement('div');
+  chips.className = 'chips';
+  options.forEach(opt => {
+    const c = document.createElement('div');
+    c.className = 'chip';
+    c.textContent = opt.label;
+    c.onclick = () => { onPick(opt.value); chips.querySelectorAll('.chip').forEach(x=>x.style.pointerEvents='none'); chips.style.opacity=0.55; };
+    chips.appendChild(c);
+  });
+  wrap.appendChild(chips);
+  row.appendChild(wrap);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+function addPostcard({ original, sourceLang, targetLang, translated, matched }){
+  const row = document.createElement('div');
+  row.className = 'row bot';
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble bot';
+  wrap.style.maxWidth = '100%';
+  wrap.innerHTML = `
+    <div class="postcard">
+      <div class="pc-row"><span>FROM</span><span class="pc-lang">${langName(sourceLang)}</span></div>
+      <p class="pc-text">${original}</p>
+      <div class="pc-row"><span>TO</span><span class="pc-lang">${langName(targetLang)}</span></div>
+      <p class="pc-text">${translated}</p>
+      ${matched ? "" : `<p class="pc-detect-note">Demo translation — live text goes through the Google Translate API call in the code.</p>`}
+    </div>
+  `;
+  row.appendChild(wrap);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+/* ============================================================
+   5. CONVERSATION ENGINE
+   ============================================================ */
+
+let session = { targetLang:null, pinnedSource:null };
+let stage = "target";
+
+function startConversation(){
+  chatEl.innerHTML = "";
+  session = { targetLang:null, pinnedSource:null };
+  addBotBubble("Hi! I'm LinguaBot 🌍 Send me a message in any language and I'll translate it. First — what language should I translate <em>into</em>?");
+  addChips(LANGUAGES.slice(0,8).map(l=>({label:l.name, value:l.code})).concat([{label:"More languages…", value:"__more"}]), (choice) => {
+    if(choice === "__more"){
+      addUserBubble("More languages…");
+      addChips(LANGUAGES.slice(8).map(l=>({label:l.name, value:l.code})), (choice2) => {
+        addUserBubble(langName(choice2));
+        session.targetLang = choice2;
+        readyForMessage();
+      });
+    } else {
+      addUserBubble(langName(choice));
+      session.targetLang = choice;
+      readyForMessage();
+    }
+  });
+  stage = "target";
+}
+
+function readyForMessage(){
+  addBotBubble(`Great — translating into <strong>${langName(session.targetLang)}</strong>. Type your message below whenever you're ready. (Try "hello", "thank you", "good morning", "how are you", or "goodbye" for a full live demo translation.)`);
+  stage = "message";
+}
+
+async function handleMessage(text){
+  const detected = detectLanguage(text);
+  addBotBubble(`Detected source language: <strong>${langName(detected)}</strong>`);
+  const result = await translateText({ text, sourceLang: detected, targetLang: session.targetLang });
+  addPostcard({ original:text, sourceLang:detected, targetLang:session.targetLang, translated:result.translatedText, matched:result.matched });
+  addChips([{label:"Translate another message", value:"again"},{label:"Change target language", value:"change"}], (choice) => {
+    addUserBubble(choice === "again" ? "Translate another message" : "Change target language");
+    if(choice === "change") startConversation();
+    else addBotBubble("Go ahead, type your next message.");
+  });
+}
+
+function handleFreeText(text){
+  addUserBubble(text);
+  if(stage === "message"){
+    handleMessage(text);
+  } else {
+    addBotBubble("Please pick a target language from the buttons above first.");
+  }
+}
+
+sendBtn.onclick = () => {
+  const val = textInput.value.trim();
+  if(!val) return;
+  handleFreeText(val);
+  textInput.value = "";
+};
+textInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendBtn.click(); });
+
+startConversation();
+</script>
+</body>
+</html>
